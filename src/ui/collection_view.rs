@@ -243,7 +243,9 @@ pub fn collection_viewer(collection: Arc<Checklist>) -> impl View {
             .on_event(Event::Char('/'), |s| {
                 let cb = s
                     .call_on_name::<LinearLayout, _, _>(MAIN_LAYOUT, |view| {
-                        view.add_child(search_box());
+                        if view.get_child(1).is_none() {
+                            view.add_child(search_box());
+                        }
                         let r = view.set_focus_index(1).expect("can't focus");
                         match r {
                             EventResult::Ignored => None,

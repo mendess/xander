@@ -112,7 +112,6 @@ pub fn ui(collection: Checklist, format: Format) {
     let (tx_error, mut rx_error) = mpsc::unbounded_channel::<anyhow::Error>();
     cursive.with_theme(|current| {
         use cursive::theme::PaletteColor;
-        // let color = Color::Dark(BaseColor::Blue);
         current.palette[PaletteColor::Background] = Color::TerminalDefault;
         current.palette[PaletteColor::HighlightInactive] = Color::Dark(BaseColor::White);
         current.palette[PaletteColor::HighlightText] = Color::Dark(BaseColor::Black);
