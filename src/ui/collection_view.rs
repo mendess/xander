@@ -110,7 +110,7 @@ fn del_collected_version(s: &mut Cursive, version: SetCode) {
 fn edit_collected_card_dialog(card: &ChecklistCard) -> impl View {
     let mut versions_view = SelectView::new();
 
-    for version in card.versions().iter() {
+    for version in card.owned_versions().iter() {
         versions_view.add_item(version.to_string(), *version);
     }
 
@@ -133,8 +133,8 @@ fn edit_collected_card_dialog(card: &ChecklistCard) -> impl View {
         })
         .button("Add", move |s| {
             let mut set_picker = SelectView::new();
-            for &set in &printings {
-                set_picker.add_item(set.to_string(), set);
+            for set in &printings {
+                set_picker.add_item(&set.name, set.code);
             }
             set_picker.set_on_submit(|s, &set| {
                 let selected = get_selected_card_name(s);
@@ -169,7 +169,7 @@ pub fn collection_viewer(collection: Arc<Checklist>) -> impl View {
             ProgressBar::new()
                 .min(0)
                 .max(4)
-                .with_value(Counter::new(card.versions().len()))
+                .with_value(Counter::new(card.owned_versions().len()))
                 .with_label(move |value, _| {
                     format!(
                         "{value}/{} ({}%)",

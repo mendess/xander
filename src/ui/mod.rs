@@ -1,6 +1,7 @@
 mod collection_view;
 pub mod panic;
 mod show;
+mod stats;
 mod vim;
 
 use std::{fmt::Write, sync::Arc};
@@ -144,7 +145,7 @@ pub fn ui(collection: Checklist, format: Format) {
                                 let card = &collection[*index];
                                 (
                                     (card.metadata.num_copies as usize)
-                                        .saturating_sub(card.versions().len()),
+                                        .saturating_sub(card.owned_versions().len()),
                                     card.card.name.clone(),
                                     card.metadata.percent_in_decks,
                                 )
@@ -157,6 +158,10 @@ pub fn ui(collection: Checklist, format: Format) {
                     })
                     .unwrap();
                 s.add_layer(save_as_dialog(missing).esq_to_quit())
+            })
+            .button("Show Stattistics", |s| {
+                let stats_view = stats::stats(&s.data().collection);
+                s.add_layer(stats_view.esq_to_quit())
             }),
     );
 

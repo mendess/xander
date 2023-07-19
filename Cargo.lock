@@ -2297,6 +2297,7 @@ dependencies = [
  "scryfall",
  "serde",
  "serde_json",
+ "static_assertions",
  "tempfile",
  "tokio",
  "uuid",
