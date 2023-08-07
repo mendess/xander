@@ -121,6 +121,7 @@ fn stat_text(name: &str, progress: Progress) -> impl View {
             cursive::views::ProgressBar::new()
                 .max(progress.total.into())
                 .with_value(cursive::utils::Counter::new(progress.owned.into()))
+                .with_label(|value, (_, max)| format!("{value}/{max}"))
                 .with_color(cursive::theme::Color::Light(
                     cursive::theme::BaseColor::White,
                 )),
