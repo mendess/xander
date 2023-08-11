@@ -29,6 +29,14 @@ impl Metadata {
 }
 
 async fn get_cached(name: &str) -> anyhow::Result<Card> {
+    fn fix_lotr_accented_cards(card: &str) -> &str {
+        match card {
+            "Lorien Revealed" => "Lórien Revealed",
+            "Troll of Khazad-dum" => "Troll of Khazad-dûm",
+            _ => card,
+        }
+    }
+    let name = fix_lotr_accented_cards(name);
     fn cache_dir() -> &'static PathBuf {
         static CACHE_DIR: OnceLock<PathBuf> = OnceLock::new();
         CACHE_DIR.get_or_init(|| {
