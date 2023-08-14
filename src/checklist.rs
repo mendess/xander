@@ -109,7 +109,7 @@ impl ChecklistCard {
 
     fn cmp<F>(&self, other: &Self, missing: F) -> Ordering
     where
-        F: Fn(&ChecklistCard) -> usize,
+        F: Fn(&ChecklistCard) -> bool,
     {
         fn colors_of(card: &Card) -> Option<&[Color]> {
             card.colors.as_deref().or_else(|| {
@@ -119,28 +119,28 @@ impl ChecklistCard {
                     .and_then(|c| c.colors.as_deref())
             })
         }
-        ((missing(self) as f32 * self.metadata.percent_in_decks)
-            .total_cmp(&(missing(other) as f32 * other.metadata.percent_in_decks))
-            .reverse())
-        .then_with(|| {
-            self.metadata
-                .percent_in_decks
-                .total_cmp(&other.metadata.percent_in_decks)
-                .reverse()
-        })
-        .then_with(|| colors_of(&self.card).cmp(&colors_of(&other.card)))
-        .then_with(|| self.card.name.cmp(&other.card.name))
+        missing(self)
+            .cmp(&missing(other))
+            .reverse()
+            .then_with(|| {
+                self.metadata
+                    .percent_in_decks
+                    .total_cmp(&other.metadata.percent_in_decks)
+                    .reverse()
+            })
+            .then_with(|| colors_of(&self.card).cmp(&colors_of(&other.card)))
+            .then_with(|| self.card.name.cmp(&other.card.name))
     }
 
     pub fn cmp_using_collected(&self, other: &Self) -> Ordering {
-        fn missing(card: &ChecklistCard) -> usize {
-            (card.metadata.num_copies as usize).saturating_sub(card.owned_versions().len())
+        fn missing(card: &ChecklistCard) -> bool {
+            card.metadata.num_copies as usize > card.owned_versions().len()
         }
         self.cmp(other, missing)
     }
 
     pub fn cmp_ignoring_collected(&self, other: &Self) -> Ordering {
-        self.cmp(other, |c| c.metadata.num_copies as _)
+        self.cmp(other, |_| false)
     }
 }
 
