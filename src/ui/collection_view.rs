@@ -155,7 +155,13 @@ fn edit_collected_card_dialog(card: &ChecklistCard) -> impl View {
         .with_vim_keys()
 }
 
-pub fn collection_viewer(collection: Arc<Checklist>) -> impl View {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum SortMode {
+    Collection,
+    NoCollection,
+}
+
+pub fn collection_viewer(collection: Arc<Checklist>, sort_mode: SortMode) -> impl View {
     let mut names = SelectView::new();
     let mut progress = LinearLayout::vertical();
     let max_text_width = collection
@@ -163,7 +169,20 @@ pub fn collection_viewer(collection: Arc<Checklist>) -> impl View {
         .map(|c| c.card.name.len())
         .max()
         .unwrap_or_default();
-    for (index, card) in collection.iter().enumerate() {
+    let mut iter;
+    let mut iter_2;
+    let iter = match sort_mode {
+        SortMode::Collection => {
+            iter = collection.iter();
+            &mut iter as &mut dyn Iterator<Item = &ChecklistCard>
+        },
+        SortMode::NoCollection => {
+            let cards = collection.ignoring_collection();
+            iter_2 = cards.into_iter();
+            &mut iter_2 as &mut dyn Iterator<Item = &ChecklistCard>
+        }
+    };
+    for (index, card) in iter.enumerate() {
         let metadata = card.metadata;
         progress.add_child(
             ProgressBar::new()

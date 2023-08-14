@@ -212,4 +212,10 @@ impl Checklist {
     pub fn iter(&self) -> core::slice::Iter<'_, ChecklistCard> {
         self.0.iter()
     }
+
+    pub fn ignoring_collection(&self) -> Vec<&ChecklistCard> {
+        let mut cards = self.0.iter().collect::<Vec<_>>();
+        cards.sort_by(|a, b| a.cmp_ignoring_collected(b));
+        cards
+    }
 }

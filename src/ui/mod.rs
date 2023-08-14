@@ -9,7 +9,7 @@ use std::{fmt::Write, sync::Arc};
 use cursive::{
     backends::crossterm,
     theme::{BaseColor, Color},
-    view::Resizable,
+    view::{Nameable, Resizable},
     views::{Dialog, EditView, TextView},
     Cursive, View,
 };
@@ -21,7 +21,7 @@ use tokio::sync::mpsc::{self, error::TryRecvError, UnboundedSender};
 use crate::checklist::Checklist;
 
 use self::{
-    collection_view::{collection_viewer, CardList, CARD_LIST},
+    collection_view::{collection_viewer, CardList, SortMode, CARD_LIST},
     vim::ViewExt,
 };
 
@@ -132,10 +132,12 @@ pub fn ui(collection: Checklist, format: Format) {
         collection: collection.clone(),
     });
 
+    let sort_mode = std::cell::Cell::new(SortMode::Collection);
+
     cursive.add_layer(
         Dialog::new()
             .title(format!("Lord Xander, The Collector | {format}"))
-            .content(collection_viewer(collection))
+            .content(collection_viewer(collection.clone(), sort_mode.get()))
             .button("To Wishlist", |s| {
                 let collection = s.data().collection.clone();
                 let missing = s
@@ -162,7 +164,17 @@ pub fn ui(collection: Checklist, format: Format) {
             .button("Show Stattistics", |s| {
                 let stats_view = stats::stats(&s.data().collection);
                 s.add_layer(stats_view.esq_to_quit())
-            }),
+            })
+            .button("Toggle Sort", move |s| {
+                sort_mode.set(match sort_mode.get() {
+                    SortMode::Collection => SortMode::NoCollection,
+                    SortMode::NoCollection => SortMode::Collection,
+                });
+                s.call_on_name::<Dialog, _, _>("collection-viewer", |dialog| {
+                    dialog.set_content(collection_viewer(collection.clone(), sort_mode.get()));
+                });
+            })
+            .with_name("collection-viewer"),
     );
 
     cursive.set_on_post_event('q', |s| s.quit());

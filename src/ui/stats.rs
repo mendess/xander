@@ -54,7 +54,7 @@ fn calculate(checklist: &Checklist) -> Stats {
             && counters[5] >= 20
             && counters[6] >= 10
     }
-    let mut iter = checklist.iter();
+    let mut iter = checklist.ignoring_collection().into_iter();
     while !counters_full(&counters) {
         let Some(c) = iter.next() else {
             break;
