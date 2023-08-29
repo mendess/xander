@@ -1,4 +1,4 @@
-use std::{collections::HashMap, pin::pin};
+use std::{collections::HashMap, num::NonZeroU8, pin::pin};
 
 use anyhow::bail;
 use tokio::io::{AsyncBufReadExt, AsyncRead, BufReader};
@@ -9,12 +9,17 @@ fn is_basic_land(name: &str) -> bool {
     matches!(name, "Plains" | "Island" | "Swamp" | "Mountain" | "Forest")
 }
 
+struct Entry {
+    owned: u8,
+    count: u8,
+}
+
 pub async fn check<R: AsyncRead>(deck: R, collection: Collection) -> anyhow::Result<()> {
     let deck = pin!(deck);
     let mut reader = BufReader::new(deck);
     let mut buf = String::new();
 
-    let mut decklist = HashMap::<_, (usize, _)>::new();
+    let mut decklist = HashMap::<_, Entry>::new();
     while {
         buf.clear();
         reader.read_line(&mut buf).await? > 0
@@ -39,20 +44,29 @@ pub async fn check<R: AsyncRead>(deck: R, collection: Collection) -> anyhow::Res
 
         decklist
             .entry(name.to_owned())
-            .and_modify(|v| v.0 += owned)
-            .or_insert((owned, count));
+            .and_modify(|v| v.count += count)
+            .or_insert(Entry {
+                owned: owned as u8,
+                count,
+            });
     }
 
-    for (name, (owned, count)) in decklist {
-        let count = count.into();
+    for (name, Entry { owned, count }) in &decklist {
         println!(
             "{owned}/{count}\t{}\t{name}",
-            match usize::saturating_sub(count, owned) {
+            match u8::saturating_sub(*count, *owned) {
                 0 => "✅",
-                x if x < count => "🟡",
+                x if x < *count => "🟡",
                 _ => "❌",
             }
         )
+    }
+
+    println!("Wishlist missing:");
+    for (name, Entry { owned, count }) in decklist {
+        if let Some(count) = count.checked_sub(owned).and_then(NonZeroU8::new) {
+            println!("{} {name}", count);
+        }
     }
 
     Ok(())
