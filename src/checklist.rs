@@ -186,7 +186,7 @@ impl Checklist {
                             .as_ref()
                             .is_some_and(|line| !line.contains("Basic"))
                 })
-                .map(|card| (RefCell::new(collection.get(&card.0.name).into()), card)),
+                .map(|card| (RefCell::new(collection.get(card.0.name.as_str().into()).into()), card)),
         )
         .map(|(versions, (card, metadata))| async move {
             const DEFAULT_METADATA: Metadata = Metadata {

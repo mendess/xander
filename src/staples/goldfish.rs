@@ -44,7 +44,7 @@ pub async fn scrape(url: Url) -> anyhow::Result<Vec<anyhow::Result<(Card, Metada
             })
             .map(|e| async move {
                 let mut values = e.text().map(str::trim).filter(|s| !s.is_empty()).skip(1);
-                let name = values.next().unwrap();
+                let name = values.next().unwrap().into();
                 let percent_in_decks = values
                     .next()
                     .and_then(|s| s.trim_end_matches('%').parse().ok());

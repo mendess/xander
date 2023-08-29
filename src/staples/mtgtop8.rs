@@ -7,6 +7,8 @@ use scraper::{ElementRef, Html, Selector};
 use scryfall::{format::Format, Card};
 use serde::Serialize;
 
+use crate::card_name::CardName;
+
 use super::Metadata;
 
 #[derive(Serialize, Debug, Clone, Copy)]
@@ -100,7 +102,7 @@ pub async fn fetch(format: Format) -> anyhow::Result<Vec<(Card, Option<Metadata>
                                 .ok()
                         }
                         let (name, percent, number_in_decks) = card.next_tuple().unwrap();
-                        let name = name.text().collect::<String>();
+                        let name = CardName::from(name.text().collect::<String>());
                         let percent = text_to_f(&percent);
                         let num_copies = text_to_f(&number_in_decks).map(|n| n.ceil() as u8);
                         (name, Metadata::new(percent, num_copies))

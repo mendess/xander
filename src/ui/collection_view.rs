@@ -10,7 +10,10 @@ use cursive::{
 };
 use scryfall::set::SetCode;
 
-use crate::checklist::{Checklist, ChecklistCard};
+use crate::{
+    card_name::CardName,
+    checklist::{Checklist, ChecklistCard},
+};
 
 use super::{background, show, vim::ViewExt, CursiveExt, MAIN_LAYOUT};
 
@@ -39,12 +42,12 @@ fn mtg_color_to_bar_color(color: Option<&[scryfall::card::Color]>) -> cursive::t
     }
 }
 
-fn get_selected_card_name(s: &mut Cursive) -> String {
+fn get_selected_card_name(s: &mut Cursive) -> CardName {
     let collection = s.data().collection.clone();
     s.call_on_name::<CardList, _, _>(CARD_LIST, |card_list| {
         let index = card_list.selected_id().unwrap();
         let col_index = card_list.get_item(index).unwrap();
-        collection[*col_index.1].card.name.clone()
+        collection[*col_index.1].card.name.clone().into()
     })
     .expect(CARD_LIST)
 }
@@ -175,7 +178,7 @@ pub fn collection_viewer(collection: Arc<Checklist>, sort_mode: SortMode) -> imp
         SortMode::Collection => {
             iter = collection.iter();
             &mut iter as &mut dyn Iterator<Item = &ChecklistCard>
-        },
+        }
         SortMode::NoCollection => {
             let cards = collection.ignoring_collection();
             iter_2 = cards.into_iter();

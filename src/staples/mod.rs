@@ -11,7 +11,7 @@ use tokio::{
     task::LocalSet,
 };
 
-use crate::PROG_NAME;
+use crate::{PROG_NAME, card_name::{CName, CardName}};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Metadata {
@@ -28,15 +28,7 @@ impl Metadata {
     }
 }
 
-async fn get_cached(name: &str) -> anyhow::Result<Card> {
-    fn fix_lotr_accented_cards(card: &str) -> &str {
-        match card {
-            "Lorien Revealed" => "Lórien Revealed",
-            "Troll of Khazad-dum" => "Troll of Khazad-dûm",
-            _ => card,
-        }
-    }
-    let name = fix_lotr_accented_cards(name);
+async fn get_cached(name: &CName) -> anyhow::Result<Card> {
     fn cache_dir() -> &'static PathBuf {
         static CACHE_DIR: OnceLock<PathBuf> = OnceLock::new();
         CACHE_DIR.get_or_init(|| {
@@ -46,8 +38,9 @@ async fn get_cached(name: &str) -> anyhow::Result<Card> {
             cache_dir
         })
     }
-    static STAPLE_CACHE: OnceCell<RwLock<HashMap<String, Card>>> = OnceCell::const_new();
+    static STAPLE_CACHE: OnceCell<RwLock<HashMap<CardName, Card>>> = OnceCell::const_new();
     static CONCURRENCY: Semaphore = Semaphore::const_new(8);
+    let _permit = CONCURRENCY.acquire().await.unwrap();
 
     let cache = STAPLE_CACHE
         .get_or_try_init(|| async {
@@ -64,17 +57,16 @@ async fn get_cached(name: &str) -> anyhow::Result<Card> {
         })
         .await?;
 
+    let name = name.trimming_double_faced();
     if let Some(card) = cache.read().await.get(name) {
         return Ok(card.clone());
     }
 
-    let _permit = CONCURRENCY.acquire().await.unwrap();
-
     let card = scryfall::Card::named(name).await?;
     let mut cache = cache.write().await;
-    let name = match card.card_faces.as_ref().and_then(|face| face.get(0)) {
-        Some(front_face) => &front_face.name,
-        None => &card.name,
+    let name: &CName = match card.card_faces.as_ref().and_then(|face| face.get(0)) {
+        Some(front_face) => front_face.name.as_str().into(),
+        None => card.name.as_str().into(),
     };
     cache.insert(name.to_owned(), card.clone());
     let cache = serde_json::to_vec::<HashMap<_, _>>(&*cache).unwrap();

@@ -1,3 +1,4 @@
+mod card_name;
 mod checklist;
 mod collection;
 mod deckbuilder;

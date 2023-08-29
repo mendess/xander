@@ -39,7 +39,7 @@ pub async fn check<R: AsyncRead>(deck: R, collection: Collection) -> anyhow::Res
         let owned = if is_basic_land(name) {
             count.into()
         } else {
-            collection.get(name).len()
+            collection.get(name.into()).len()
         };
 
         decklist
