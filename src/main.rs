@@ -10,6 +10,8 @@ use std::{convert::Infallible, path::PathBuf, str::FromStr};
 use anyhow::bail;
 use checklist::Checklist;
 use clap::Parser;
+use either::Either;
+use reqwest::Url;
 use scryfall::format::Format;
 use tokio::fs::File;
 use ui::panic::BACKTRACE_FILE_PATH;
@@ -23,7 +25,7 @@ struct Args {
 #[derive(Debug, Clone)]
 enum Mode {
     Format(Format),
-    Deckbuilder(PathBuf),
+    Deckbuilder(Either<PathBuf, Url>),
 }
 
 impl FromStr for Mode {
@@ -33,7 +35,10 @@ impl FromStr for Mode {
         if let Some(f) = parse_format(s) {
             Ok(Self::Format(f))
         } else {
-            Ok(Self::Deckbuilder(s.into()))
+            match Url::parse(s) {
+                Ok(url) => Ok(Self::Deckbuilder(Either::Right(url))),
+                Err(_) => Ok(Self::Deckbuilder(Either::Left(s.into()))),
+            }
         }
     }
 }
@@ -92,9 +97,12 @@ async fn main() -> anyhow::Result<()> {
                 }
             }
         }
-        Mode::Deckbuilder(deck) => {
+        Mode::Deckbuilder(Either::Left(deck)) => {
             let deck = File::open(&deck).await?;
             deckbuilder::check(deck, collection).await?;
+        }
+        Mode::Deckbuilder(Either::Right(url)) => {
+            deckbuilder::load_from_web_page(url, collection).await?;
         }
     }
 
