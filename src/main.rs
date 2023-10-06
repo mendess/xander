@@ -49,10 +49,12 @@ fn parse_format(arg: &str) -> Option<Format> {
     use fuzzy_matcher::skim::SkimMatcherV2;
     use fuzzy_matcher::FuzzyMatcher;
 
-    static FORMAT: [(&str, Format); 3] = [
+    static FORMAT: [(&str, Format); 5] = [
         ("pauper", Format::Pauper),
         ("legacy", Format::Legacy),
         ("pioneer", Format::Pioneer),
+        ("standard", Format::Standard),
+        ("t2", Format::Standard),
     ];
 
     let matcher = SkimMatcherV2::default();

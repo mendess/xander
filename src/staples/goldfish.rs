@@ -14,6 +14,7 @@ fn urls_from_format(format: Format) -> anyhow::Result<[Url; 3]> {
         Format::Pauper => "pauper",
         Format::Pioneer => "pioneer",
         Format::Legacy => "legacy",
+        Format::Standard => "standard",
         _ => bail!("{format} not supported"),
     };
 

@@ -23,6 +23,7 @@ fn format_to_form_param(format: Format) -> anyhow::Result<&'static str> {
         Format::Pauper => "PAU",
         Format::Legacy => "LE",
         Format::Pioneer => "PI",
+        Format::Standard => "ST",
         _ => bail!("unsuported format: {format}"),
     })
 }
