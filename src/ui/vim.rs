@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use cursive::{views::OnEventView, View, event::Key};
+use cursive::{event::Key, views::OnEventView, View};
 
 pub struct VimView<V>(V);
 

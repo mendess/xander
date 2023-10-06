@@ -11,7 +11,10 @@ use tokio::{
     task::LocalSet,
 };
 
-use crate::{PROG_NAME, card_name::{CName, CardName}};
+use crate::{
+    card_name::{CName, CardName},
+    PROG_NAME,
+};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Metadata {

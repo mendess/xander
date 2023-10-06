@@ -16,9 +16,7 @@ pub fn show(card: &Card) -> Option<impl Future<Output = anyhow::Result<()>>> {
     }
     .cloned();
 
-    let Some(uri) = uri else {
-        return None
-    };
+    let Some(uri) = uri else { return None };
     Some(async move {
         let (file, path) = tempfile::Builder::new()
             .suffix(".png")

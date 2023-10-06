@@ -4,7 +4,10 @@ use anyhow::bail;
 use scryfall::set::SetCode;
 use tokio::io::AsyncWriteExt;
 
-use crate::{PROG_NAME, card_name::{CardName, CName}};
+use crate::{
+    card_name::{CName, CardName},
+    PROG_NAME,
+};
 
 type Versions = Vec<SetCode>;
 
@@ -12,7 +15,10 @@ pub struct Collection(pub HashMap<CardName, Versions>);
 
 impl Collection {
     pub fn get(&'_ self, name: &CName) -> &'_ [SetCode] {
-        self.0.get(name.trimming_double_faced()).map(|v| v.as_slice()).unwrap_or(&[][..])
+        self.0
+            .get(name.trimming_double_faced())
+            .map(|v| v.as_slice())
+            .unwrap_or(&[][..])
     }
 }
 
