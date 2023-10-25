@@ -1,7 +1,7 @@
 use std::{collections::HashMap, iter::repeat};
 
 use anyhow::bail;
-use futures_util::{stream::FuturesUnordered, TryStreamExt};
+use futures_util::{stream::FuturesUnordered, StreamExt, TryStreamExt};
 use itertools::Itertools;
 use scraper::{ElementRef, Html, Selector};
 use scryfall::{format::Format, Card};
@@ -88,45 +88,51 @@ pub async fn fetch(format: Format) -> anyhow::Result<Vec<(Card, Option<Metadata>
 
             let doc = Html::parse_document(&text);
             let selector = Selector::parse(r#"td[class="L14"]"#).unwrap();
-            let r = anyhow::Ok(
-                doc.select(&selector)
-                    .chunks(3)
-                    .into_iter()
-                    .map(|mut card| {
-                        fn text_to_f(elem: &ElementRef<'_>) -> Option<f32> {
-                            elem.text()
-                                .next()?
-                                .split_whitespace()
-                                .filter(|x| !x.is_empty())
-                                .map(str::parse)
-                                .next()?
-                                .ok()
-                        }
-                        let (name, percent, number_in_decks) = card.next_tuple().unwrap();
-                        let name = CardName::from(name.text().collect::<String>());
-                        let percent = text_to_f(&percent);
-                        let num_copies = text_to_f(&number_in_decks).map(|n| n.ceil() as u8);
-                        (name, Metadata::new(percent, num_copies))
-                    })
-                    .collect::<Vec<_>>(),
-            );
+            let page_cards = doc
+                .select(&selector)
+                .chunks(3)
+                .into_iter()
+                .map(|mut card| {
+                    fn text_to_f(elem: &ElementRef<'_>) -> Option<f32> {
+                        elem.text()
+                            .next()?
+                            .split_whitespace()
+                            .filter(|x| !x.is_empty())
+                            .map(str::parse)
+                            .next()?
+                            .ok()
+                    }
+                    let (name, percent, number_in_decks) = card.next_tuple().unwrap();
+                    let name = CardName::from(name.text().collect::<String>());
+                    let percent = text_to_f(&percent);
+                    let num_copies = text_to_f(&number_in_decks).map(|n| n.ceil() as u8);
+                    (page, name, Metadata::new(percent, num_copies))
+                })
+                .collect::<Vec<_>>();
             println!(
-                "<===== scraped page {page:02} of mtgtop8, found {:?} cards",
-                r.as_ref().map(|v| v.len())
+                "<===== scraped page {page:02} of mtgtop8, found {} cards",
+                page_cards.len(),
             );
-            r
+            anyhow::Ok(page_cards)
         })
         .collect::<FuturesUnordered<_>>()
         .into_stream()
         .try_collect::<Vec<Vec<_>>>()
         .await?;
 
-    cards
-        .into_iter()
-        .flatten()
-        .map(|(card, percent)| async move { super::get_cached(&card).await.map(|c| (c, Some(percent))) })
-        .collect::<FuturesUnordered<_>>()
-        .into_stream()
-        .try_collect::<Vec<_>>()
-        .await
+    Ok(futures_util::stream::iter(cards.into_iter().flatten().map(
+        |(page, card, percent)| async move {
+            match super::get_cached(&card).await {
+                Ok(card) => Some((card, Some(percent))),
+                Err(e) => {
+                    println!("[WARN] failed to fetch {card} from page {page}: {e}");
+                    None
+                }
+            }
+        },
+    ))
+    .buffer_unordered(usize::MAX)
+    .filter_map(std::future::ready)
+    .collect::<Vec<_>>()
+    .await)
 }

@@ -1,4 +1,4 @@
-use anyhow::bail;
+use anyhow::{bail, Context};
 use futures_util::{
     stream::{self, FuturesUnordered},
     StreamExt, TryStreamExt,
@@ -54,7 +54,9 @@ pub async fn scrape(url: Url) -> anyhow::Result<Vec<anyhow::Result<(Card, Metada
                     .and_then(|s| s.parse::<f32>().ok())
                     .map(|c| c.ceil() as u8);
 
-                let card = super::get_cached(name).await;
+                let card = super::get_cached(name)
+                    .await
+                    .context("fetching from goldfish");
                 card.map(|card| (card, Metadata::new(percent_in_decks, num_copies)))
             })
             .collect::<FuturesUnordered<_>>()

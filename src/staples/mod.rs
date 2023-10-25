@@ -3,7 +3,7 @@ pub mod mtgtop8;
 
 use std::{collections::HashMap, io, path::PathBuf, sync::OnceLock};
 
-use anyhow::bail;
+use anyhow::{bail, Context};
 use futures_util::try_join;
 use scryfall::{format::Format, Card};
 use tokio::{
@@ -65,7 +65,9 @@ async fn get_cached(name: &CName) -> anyhow::Result<Card> {
         return Ok(card.clone());
     }
 
-    let card = scryfall::Card::named(name).await?;
+    let card = scryfall::Card::named(name)
+        .await
+        .with_context(|| format!("error fetching card with name '{name}'"))?;
     let mut cache = cache.write().await;
     let name: &CName = match card.card_faces.as_ref().and_then(|face| face.get(0)) {
         Some(front_face) => front_face.name.as_str().into(),
