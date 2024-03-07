@@ -5,18 +5,17 @@ use std::future::Future;
 use tokio::{fs::File, io::AsyncWriteExt};
 
 pub fn show(card: &Card) -> Option<impl Future<Output = anyhow::Result<()>>> {
-    let uri = if let Some(large) = card.image_uris.get("large") {
-        Some(large)
+    let uri = if let Some(large) = card.image_uris.as_ref().and_then(|u| u.large.as_ref()) {
+        large
     } else if let Some(faces) = &card.card_faces {
         faces
             .iter()
-            .find_map(|face| face.image_uris.as_ref().and_then(|u| u.get("large")))
+            .find_map(|face| face.image_uris.as_ref().and_then(|u| u.get("large")))?
     } else {
-        None
+        return None;
     }
-    .cloned();
+    .clone();
 
-    let Some(uri) = uri else { return None };
     Some(async move {
         let (file, path) = tempfile::Builder::new()
             .suffix(".png")
