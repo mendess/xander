@@ -4,7 +4,7 @@ mod show;
 mod stats;
 mod vim;
 
-use std::{fmt::Write, sync::Arc};
+use std::{fmt::Write, rc::Rc};
 
 use cursive::{
     backends::crossterm,
@@ -46,9 +46,9 @@ where
     });
 }
 
-fn error_dialog<E: ?Sized, F>(s: &mut Cursive, e: &E, then: F)
+fn error_dialog<E, F>(s: &mut Cursive, e: &E, then: F)
 where
-    E: std::error::Error,
+    E: ?Sized + std::error::Error,
     F: Fn(&mut Cursive) + 'static,
 {
     s.add_layer(
@@ -105,7 +105,7 @@ fn save_as_dialog(missing: Vec<(usize, String, f32)>) -> impl View {
 
 struct Data {
     pub tx_error: UnboundedSender<anyhow::Error>,
-    pub collection: Arc<Checklist>,
+    pub collection: Rc<Checklist>,
 }
 
 pub fn ui(collection: Checklist, format: Format) {
@@ -126,7 +126,7 @@ pub fn ui(collection: Checklist, format: Format) {
         current.palette[PaletteColor::TitleSecondary] = Color::TerminalDefault;
     });
 
-    let collection = Arc::new(collection);
+    let collection = Rc::new(collection);
     cursive.set_user_data(Data {
         tx_error,
         collection: collection.clone(),

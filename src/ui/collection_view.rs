@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use cursive::{
     event::{Callback, Event, EventResult, Key},
@@ -164,7 +164,7 @@ pub enum SortMode {
     NoCollection,
 }
 
-pub fn collection_viewer(collection: Arc<Checklist>, sort_mode: SortMode) -> impl View {
+pub fn collection_viewer(collection: Rc<Checklist>, sort_mode: SortMode) -> impl View {
     let mut names = SelectView::new();
     let mut progress = LinearLayout::vertical();
     let max_text_width = collection

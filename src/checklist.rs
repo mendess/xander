@@ -115,7 +115,7 @@ impl ChecklistCard {
             card.colors.as_deref().or_else(|| {
                 card.card_faces
                     .as_ref()
-                    .and_then(|faces| faces.get(0))
+                    .and_then(|faces| faces.first())
                     .and_then(|c| c.colors.as_deref())
             })
         }

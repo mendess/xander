@@ -69,7 +69,7 @@ async fn get_cached(name: &CName) -> anyhow::Result<Card> {
         .await
         .with_context(|| format!("error fetching card with name '{name}'"))?;
     let mut cache = cache.write().await;
-    let name: &CName = match card.card_faces.as_ref().and_then(|face| face.get(0)) {
+    let name: &CName = match card.card_faces.as_ref().and_then(|face| face.first()) {
         Some(front_face) => front_face.name.as_str().into(),
         None => card.name.as_str().into(),
     };

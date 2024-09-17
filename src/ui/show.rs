@@ -10,7 +10,7 @@ pub fn show(card: &Card) -> Option<impl Future<Output = anyhow::Result<()>>> {
     } else if let Some(faces) = &card.card_faces {
         faces
             .iter()
-            .find_map(|face| face.image_uris.as_ref().and_then(|u| u.get("large")))?
+            .find_map(|face| face.image_uris.as_ref().and_then(|u| u.large.as_ref()))?
     } else {
         return None;
     }
